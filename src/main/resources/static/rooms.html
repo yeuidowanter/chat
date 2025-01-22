@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chat Rooms</title>
+    <link href="/webjars/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/main.css" rel="stylesheet">
+    <script src="/webjars/jquery/jquery.min.js"></script>
+</head>
+<body>
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Create New Room</h5>
+                    <form id="createRoomForm">
+                        <div class="form-group mb-3">
+                            <label for="roomName">Room Name</label>
+                            <input type="text" class="form-control" id="roomName" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Create Room</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Available Rooms</h5>
+                    <div id="roomList" class="list-group mt-3">
+                        <!-- Rooms will be listed here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const username = localStorage.getItem('chatUsername');
+if (!username) {
+    window.location.href = '/login.html';
+}
+
+function loadRooms() {
+    $.get('/api/rooms', function(rooms) {
+        const roomList = $('#roomList');
+        roomList.empty();
+        
+        rooms.forEach(room => {
+            const canJoin = room.members.includes(username);
+            const memberCount = room.members.length;
+            roomList.append(`
+                <div class="list-group-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="mb-1">${room.roomName}</h5>
+                            <small>Owner: ${room.owner}</small><br>
+                            <small>Members: ${memberCount}/${room.maxMembers}</small>
+                        </div>
+                        <div>
+                            ${canJoin ? 
+                                `<a href="/index.html?roomId=${room.roomId}" class="btn btn-success btn-sm">Join</a>` :
+                                `<button class="btn btn-primary btn-sm join-room" data-room-id="${room.roomId}">Request Join</button>`
+                            }
+                        </div>
+                    </div>
+                </div>
+            `);
+        });
+    });
+}
+
+$('#createRoomForm').submit(function(e) {
+    e.preventDefault();
+    const roomCreateDto = {
+        roomName: $('#roomName').val(),
+        owner: username
+    };
+    
+    $.ajax({
+        url: '/api/rooms',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(roomCreateDto),
+        success: function(roomDto) {  // 서버에서 RoomDto를 반환
+            $('#roomName').val('');
+            loadRooms();
+            // 방 생성 후 바로 입장하고 싶다면:
+            // window.location.href = `/index.html?roomId=${roomDto.roomId}`;
+        },
+        error: function(error) {
+            console.error('방 생성 실패:', error);
+        }
+    });
+});
+
+$(document).on('click', '.join-room', function() {
+    const roomId = $(this).data('room-id');
+    $.ajax({
+        url: `/api/rooms/${roomId}/members`,
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            username: username
+        }),
+        success: function(updatedRoom) {
+            console.log('Updated room:', updatedRoom);
+            loadRooms();
+        },
+        error: function(error) {
+            console.error('Failed to join room:', error);
+            // 에러 처리 (예: 알림 표시)
+        }
+    });
+});
+
+// 초기 방 목록 로드
+loadRooms();
+</script>
+</body>
+</html> 

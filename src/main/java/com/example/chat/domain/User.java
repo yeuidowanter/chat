@@ -1,4 +1,4 @@
-package com.example.chat;
+package com.example.chat.domain;
 
 public class User {
     private String userId;
