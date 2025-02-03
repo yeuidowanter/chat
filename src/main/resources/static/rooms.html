@@ -8,6 +8,11 @@
 </head>
 <body>
 <div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Chat Rooms</h2>
+        <button id="logout" class="btn btn-danger">Logout</button>
+    </div>
+    
     <div class="row">
         <div class="col-md-4">
             <div class="card">
@@ -42,6 +47,19 @@ const username = localStorage.getItem('chatUsername');
 if (!username) {
     window.location.href = '/login.html';
 }
+
+// 로그아웃 함수 추가
+function logout() {
+    // localStorage 정리
+    localStorage.removeItem('chatUsername');
+    localStorage.removeItem('isNewLogin');
+    
+    // 로그인 페이지로 리다이렉트
+    window.location.href = '/login.html';
+}
+
+// 로그아웃 버튼 이벤트 리스너 추가
+$('#logout').click(logout);
 
 function loadRooms() {
     $.get('/api/rooms', function(rooms) {

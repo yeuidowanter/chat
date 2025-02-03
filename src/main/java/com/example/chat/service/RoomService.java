@@ -55,7 +55,8 @@ public class RoomService {
     }
 
     public boolean removeMemberFromRoom(String roomId, String username) {
-        Room room = getRoom(roomId);
+        Room room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new RuntimeException("Room not found"));
         boolean removed = room.removeMember(username);
         if (removed) {
             roomRepository.save(room);
